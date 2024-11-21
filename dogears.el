@@ -141,6 +141,12 @@ The buffer is updated when commands like `dogears-remember',
   "Echo a message when moving back/forward."
   :type 'boolean)
 
+;;;; Faces
+
+(defface dogears-last-visited-index '((t (:inherit font-lock-keyword-face)))
+  "Face for index of last-visited dogeared place in `dogears-list-mode'."
+  :group 'dogears)
+
 ;;;; Commands
 
 ;;;###autoload
@@ -544,7 +550,7 @@ Compares against modes in `dogears-ignore-modes'."
            for i from 0
            for index = (if (equal i dogears-position)
                            (propertize (number-to-string i)
-                                       'face 'font-lock-keyword-face)
+                                       'face 'dogears-last-visited-index)
                          (number-to-string i))
            collect (list place
                          (cl-coerce (cons index (dogears--format-record-list place))
