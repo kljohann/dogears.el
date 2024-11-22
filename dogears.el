@@ -488,11 +488,30 @@ Compares against modes in `dogears-ignore-modes'."
   (interactive)
   (dogears-go (tabulated-list-get-id)))
 
-(defun dogears-list-delete ()
-  "Delete entry at point."
-  (interactive)
-  (let ((place (tabulated-list-get-id)))
-    (setf dogears-list (cl-delete place dogears-list)))
+(defun dogears--list-places (n)
+  "List N consecutive places in `dogears-list-mode' starting/ending with point."
+  (setq n (prefix-numeric-value n))
+  (let* ((backward (< n 0))
+         (remaining (abs n))
+         places)
+    (save-excursion
+      (while (> remaining 0)
+        (cl-decf remaining)
+        (push (tabulated-list-get-id) places)
+        ;; Stop if point cannot move further or is beyond last line.
+        (when (or (/= 0 (forward-line (if backward -1 1)))
+                  (eobp))
+          (setq remaining 0))))
+    (if backward
+        places
+      (nreverse places))))
+
+(defun dogears-list-delete (&optional n)
+  "Delete entry at point.
+If N is a positive (negative) number, delete the next (previous)
+N entries, including the one at point."
+  (interactive "p")
+  (cl-callf cl-nset-difference dogears-list (dogears--list-places n))
   (tabulated-list-revert))
 
 ;;;###autoload
