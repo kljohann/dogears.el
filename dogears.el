@@ -313,7 +313,7 @@ consider manually dogeared places."
                        (pcase direction
                          ('backward "Back")
                          ('forward "Forward"))
-                       dogears-position (length dogears-list)))))
+                       (1+ dogears-position) (length dogears-list)))))
       (dogears--update-list-buffer)
       (user-error "At %s %sdogeared place"
                   (pcase direction
@@ -573,9 +573,9 @@ N entries, including the one at point."
   (cl-loop for place in dogears-list
            for i from 0
            for index = (if (equal i dogears-position)
-                           (propertize (number-to-string i)
+                           (propertize (number-to-string (1+ i))
                                        'face 'dogears-last-visited-index)
-                         (number-to-string i))
+                         (number-to-string (1+ i)))
            collect (list place
                          (cl-coerce (cons index (dogears--format-record-list place))
                                     'vector))))
