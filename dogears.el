@@ -379,9 +379,12 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
     (format "%s [%9.9s]  (%35.35s)  \"%35.35s\"  %15.15s %12.12s %5.5s:%s"
             manual relevance within line buffer mode position dir)))
 
+(defface dogears--default-pitch-and-height '((t :height 1.0 :inherit fixed-pitch))
+  "Use fixed-pitch font and regular height.")
+
 (defun dogears--format-record-list (record)
   "Return a list of elements in RECORD formatted."
-  (cl-labels ((face-propertize (string face)
+  (cl-labels ((face-propertize (string face &optional prepend)
                 ;; Return copy of STRING with FACE appended, but only if it doesn't already
                 ;; contain FACE.  (I don't know a better way to prevent faces being added
                 ;; repeatedly, which eventually, drastically slows down redisplay).
@@ -389,7 +392,8 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
                 (let ((property (get-text-property 0 'face string)))
                   (unless (or (equal face property)
 			      (and (listp property) (member face property)))
-                    (add-face-text-property 0 (length string) face 'append string)))
+                    (add-face-text-property 0 (length string) face
+                                            (unless prepend 'append) string)))
                 string))
     (pcase-let* ((`(,name . ,(map filename line manualp mode position within)) record)
                  (manual (if manualp "✓" " "))
@@ -406,7 +410,9 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
                  (relevance (face-propertize (dogears--relevance record)
                                              'font-lock-keyword-face))
                  (within (if within
-                             (face-propertize within 'font-lock-function-name-face)
+                             (face-propertize
+                              (face-propertize within 'font-lock-function-name-face)
+                              'dogears--default-pitch-and-height 'prepend)
                            ""))
                  ;; The filename may not always *be* a filename; e.g. somehow in
                  ;; EWXM buffers it gets set to " - no file -", instead of just nil.
