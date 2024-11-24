@@ -158,19 +158,8 @@ you've been and helps you retrace your steps."
   (if dogears-mode
       (progn
         (dolist (fn dogears-functions)
-          ;; The interactive form of an advice function overrides the
-          ;; form of an advised function, so we must use a lambda with
-          ;; the advised function's interactive form.
-          (let* ((advice-fn-symbol (intern (format "dogears--remember-after-%s" fn)))
-                 (advice-fn
-		  `(lambda (&rest _ignore)
-                     ,(format "Call `dogears-remember'.  Used as :after advice for `%s'."
-                              fn)
-                     ,(interactive-form fn)
-                     (dogears-remember))))
-            (fset advice-fn-symbol advice-fn)
-            (advice-add fn :after advice-fn-symbol )
-            (setf (map-elt dogears-functions-advice fn) advice-fn-symbol)))
+          (advice-add fn :after 'dogears-remember--after)
+          (setf (map-elt dogears-functions-advice fn) 'dogears-remember--after))
         (dolist (hook dogears-hooks)
           (add-hook hook #'dogears-remember))
         (when dogears-idle
@@ -234,6 +223,12 @@ you've been and helps you retrace your steps."
             (message "Dogeared")))
       (when (called-interactively-p 'interactive)
         (message "Dogears: Couldn't dogear this place")))))
+
+;; If an advice function has an interactive form, the interactive form of the
+;; advised function is overridden.  To avoid this, we use a non-interactive wrapper.
+(defun dogears-remember--after (&rest _ignore)
+  "Call `dogears-remember'.  Used as :after advice for `dogears-functions'."
+  (dogears-remember))
 
 ;;;###autoload
 (defun dogears-go (place)
