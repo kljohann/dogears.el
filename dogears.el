@@ -511,8 +511,13 @@ Compares against modes in `dogears-ignore-modes'."
 If N is a positive (negative) number, delete the next (previous)
 N entries, including the one at point."
   (interactive "p")
-  (cl-callf cl-nset-difference dogears-list (dogears--list-places n))
-  (tabulated-list-revert))
+  (let ((prev-line (line-number-at-pos))
+        (places (dogears--list-places n)))
+    (cl-callf cl-nset-difference dogears-list places)
+    (tabulated-list-revert)
+    (goto-line (if (< (prefix-numeric-value n) 0)
+                   (- prev-line (length places))
+                 prev-line))))
 
 ;;;###autoload
 (defun dogears-list ()
