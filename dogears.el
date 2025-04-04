@@ -176,6 +176,24 @@ you've been and helps you retrace your steps."
       (cancel-timer dogears-idle-timer)
       (setf dogears-idle-timer nil))))
 
+(defun dogears--buffer-substring-only-face-properties (start end)
+  "Return the text from START to END, keeping only face properties."
+  (let ((orig-buffer (current-buffer)))
+    (with-temp-buffer
+      (insert-buffer-substring-no-properties orig-buffer start end)
+      (let ((work-buffer (current-buffer))
+            (pos start))
+        (while (< pos end)
+          (set-buffer orig-buffer)
+          (let ((face (get-text-property pos 'face))
+                (next (next-single-property-change pos 'face nil end)))
+            (set-buffer work-buffer)
+            (when face
+              (put-text-property (1+ (- pos start)) (1+ (- next start))
+                                 'face face))
+            (setq pos next))))
+      (buffer-string))))
+
 (defun dogears--place (&optional manualp)
   "Return record for current buffer at point."
   (when-let ((record (or (ignore-errors
@@ -201,8 +219,9 @@ you've been and helps you retrace your steps."
                            (car record))))
       (setf (map-elt (cdr record) 'within) within))
     (setf (map-elt (cdr record) 'mode) major-mode
-          (map-elt (cdr record) 'line) (buffer-substring-no-properties
-                                        (point-at-bol) (point-at-eol)))
+          (map-elt (cdr record) 'line)
+          (dogears--buffer-substring-only-face-properties
+           (point-at-bol) (point-at-eol)))
     record))
 
 ;;;###autoload
@@ -401,7 +420,9 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
                                               (file-name-nondirectory filename)
                                             name)
                                           'font-lock-constant-face))
-                 (line (string-trim line))
+                 (line (face-propertize
+                        (string-trim line)
+                        'dogears--default-pitch-and-height 'prepend))
                  (mode (face-propertize (string-remove-suffix "-mode" (symbol-name mode))
                                         'font-lock-type-face))
                  (position (if position
